@@ -5,25 +5,6 @@ from pyinform.error import ErrorCode, error_guard
 
 
 def transfer_entropy(source, target, k, condition=None, local=False):
-    """
-    Compute the local or average transfer entropy from one time series to
-    another with target history length *k*. Optionally, time series can be
-    provided against which to *condition*.
-    :param source: the source time series
-    :type source: sequence or ``numpy.ndarray``
-    :param target: the target time series
-    :type target: sequence or ``numpy.ndarray``
-    :param int k: the history length
-    :param condition: time series of any conditions
-    :type condition: sequence or ``numpy.ndarray``
-    :param bool local: compute the local transfer entropy
-    :returns: the average or local transfer entropy
-    :rtype: float or ``numpy.ndarray``
-    :raises ValueError: if the time series have different shapes
-    :raises ValueError: if either time series has no initial conditions
-    :raises ValueError: if either time series is greater than 2-D
-    :raises InformError: if an error occurs within the ``inform`` C call
-    """
     ys = np.ascontiguousarray(source, np.int32)
     xs = np.ascontiguousarray(target, np.int32)
     cs = np.ascontiguousarray(condition, np.int32) if condition is not None else None
