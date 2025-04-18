@@ -8,18 +8,9 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from vmdpy import VMD  # pip install vmdpy
 
-# -------------------------------
-# Global settings: Use Times New Roman, font size 20 and bold
-# -------------------------------
-plt.rcParams['font.family'] = 'Times New Roman'
-plt.rcParams['font.size'] = 20
-plt.rcParams['font.weight'] = 'bold'
-
-# ============================
-# 1. Data loading and preprocessing
-# ============================
+# Data loading and preprocessing
 # Modify the file path to your Excel data path
-file_path = r"C:\Users\Administrator\Desktop\十年逐月.xlsx"
+file_path = "data.xlsx"
 data = pd.read_excel(file_path)
 
 # Convert the date to datetime format and sort by date
@@ -35,9 +26,7 @@ def preprocess_data(df):
     df = df.sort_index()
     return df
 
-# ============================
-# 2. VMD Decomposition Function
-# ============================
+# VMD Decomposition Function
 def vmd_decompose(signal, alpha=2000, tau=0, K=5, DC=0, init=1, tol=1e-7):
     """
     Decompose a 1D signal using VMD
@@ -50,9 +39,7 @@ def vmd_decompose(signal, alpha=2000, tau=0, K=5, DC=0, init=1, tol=1e-7):
     u, u_hat, omega = VMD(signal, alpha, tau, K, DC, init, tol)
     return u
 
-# ============================
-# 3. Hybrid Model Function: VMD + ARIMA + LSTM (with in-sample performance metrics)
-# ============================
+# Hybrid Model Function: VMD + ARIMA + LSTM (with in-sample performance metrics)
 def hybrid_forecast_with_vmd(df, n_steps, lstm_window_size=60, lstm_epochs=10, lstm_batch_size=32, K=5):
     """
     For a single LME's time series data (df requires 'MPB' column, Date as index), build a hybrid model:
@@ -88,10 +75,7 @@ def hybrid_forecast_with_vmd(df, n_steps, lstm_window_size=60, lstm_epochs=10, l
     # Model and predict for each IMF component
     for i in range(K):
         imf = imfs[i, :].reshape(-1, 1)
-        
-        # ------------------------------
-        # 3.1 ARIMA modeling (capture linear part)
-        # ------------------------------
+        # ARIMA modeling (capture linear part)
         try:
             arima_model = ARIMA(imf, order=(5, 1, 0))
             arima_fit = arima_model.fit()
@@ -103,9 +87,7 @@ def hybrid_forecast_with_vmd(df, n_steps, lstm_window_size=60, lstm_epochs=10, l
         lag = len(imf) - len(arima_fit.fittedvalues)
         arima_fitted = arima_fit.fittedvalues.reshape(-1, 1)
         
-        # ------------------------------
-        # 3.2 Compute residuals and use LSTM to fit the residuals in-sample
-        # ------------------------------
+        # Compute residuals and use LSTM to fit the residuals in-sample
         residuals = imf[lag:] - arima_fitted  # In-sample residuals (standardized)
         residuals = residuals.flatten()
         
@@ -139,9 +121,7 @@ def hybrid_forecast_with_vmd(df, n_steps, lstm_window_size=60, lstm_epochs=10, l
         in_sample_list.append(imf_in_sample_scaled)
         actual_in_sample_list.append(actual_imf_in_sample)
         
-        # ------------------------------
-        # 3.3 Future n_steps prediction
-        # ------------------------------
+        # Future n_steps prediction
         # Use ARIMA's get_forecast method to obtain the predicted mean for the next n_steps
         forecast_obj = arima_fit.get_forecast(steps=n_steps)
         forecast_arima_scaled = forecast_obj.predicted_mean.reshape(-1, 1)
@@ -163,9 +143,7 @@ def hybrid_forecast_with_vmd(df, n_steps, lstm_window_size=60, lstm_epochs=10, l
         # Sum future forecasts of all IMFs
         future_forecast_scaled += imf_future_forecast_scaled
 
-    # ------------------------------
-    # 3.4 Combine in-sample predictions and compute performance metrics
-    # ------------------------------
+    # Combine in-sample predictions and compute performance metrics
     if len(in_sample_list) == 0:
         print("No in-sample predictions generated!")
         return None, None, None, None
@@ -191,9 +169,7 @@ def hybrid_forecast_with_vmd(df, n_steps, lstm_window_size=60, lstm_epochs=10, l
     
     return future_forecast_val, in_sample_pred, metrics, scaler
 
-# ============================
-# 4. Process for each LME, output performance metrics and results visualization
-# ============================
+# Process for each LME, output performance metrics and results visualization
 grouped_lme = lme_data.groupby('LME')
 
 for lme, group in grouped_lme:
@@ -230,9 +206,7 @@ for lme, group in grouped_lme:
     growth_rate = (forecast_avg - historical_avg) / historical_avg * 100
     print(f"Growth rate: {growth_rate:.2f}%")
     
-    # ---------------------------
     # Visualization results
-    # ---------------------------
     plt.figure(figsize=(8, 6))
     ax = plt.gca()
     # Thicken the border lines of the plot
